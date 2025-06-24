@@ -1,14 +1,24 @@
 import express from "express";
-import multer from "multer";
 import sharp from "sharp";
 import cors from "cors";
+import axios from "axios";
+import multer from "multer";
 
 const app = express();
-const upload = multer({ storage: multer.memoryStorage() });
-
 app.use(cors());
 
-// Enhanced text positioning function
+// Keep multer for optional file upload compatibility
+const upload = multer({ storage: multer.memoryStorage() });
+
+async function downloadImage(url) {
+  const response = await axios({
+    method: "GET",
+    url: url,
+    responseType: "arraybuffer",
+  });
+  return Buffer.from(response.data, "binary");
+}
+
 function calculateTextPosition(
   imgWidth,
   imgHeight,
@@ -23,29 +33,31 @@ function calculateTextPosition(
       x: (imgWidth - textWidth) / 2,
       y: imgHeight - textHeight * 1.2,
     },
-    // Add more positions as needed
   };
-
   return positions[position] || positions["center"];
 }
 
-app.post("/api/add-quote", upload.single("image"), async (req, res) => {
+app.post("/api/add-quote", async (req, res) => {
   try {
-    if (!req.file) return res.status(400).json({ error: "No image uploaded" });
-
     const {
+      imageUrl, // New parameter for image URL
       quote = "Default quote",
       textColor = "#FFFFFF",
       backgroundColor = "transparent",
       fontSize = 72,
       position = "center",
-      maxWidth = 800, // pixels for text wrapping
+      maxWidth = 800,
     } = req.body;
 
-    // Get image metadata
-    const metadata = await sharp(req.file.buffer).metadata();
+    if (!imageUrl) {
+      return res.status(400).json({ error: "No image URL provided" });
+    }
 
-    // Create SVG text with automatic wrapping
+    // Download the image
+    const imageBuffer = await downloadImage(imageUrl);
+    const metadata = await sharp(imageBuffer).metadata();
+
+    // Create SVG text
     const svgText = `
       <svg width="${metadata.width}" height="${metadata.height}">
         <style>
@@ -70,7 +82,7 @@ app.post("/api/add-quote", upload.single("image"), async (req, res) => {
     const svgBuffer = Buffer.from(svgText);
 
     // Process image
-    const outputImage = await sharp(req.file.buffer)
+    const outputImage = await sharp(imageBuffer)
       .composite([
         {
           input: svgBuffer,
@@ -90,9 +102,11 @@ app.post("/api/add-quote", upload.single("image"), async (req, res) => {
     res.send(outputImage);
   } catch (error) {
     console.error("Error:", error);
-    res
-      .status(500)
-      .json({ error: "Image processing failed", details: error.message });
+    res.status(500).json({
+      error: "Image processing failed",
+      details: error.message,
+      stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
+    });
   }
 });
 
