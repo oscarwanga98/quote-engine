@@ -24,7 +24,7 @@ RUN mkdir -p node_modules/opentype.js/dist/fonts \
     -O node_modules/opentype.js/dist/fonts/Arial.ttf
 
 # Build the app (if needed)
-RUN npm run start
+RUN npm run build
 
 # Expose port
 EXPOSE 3000
