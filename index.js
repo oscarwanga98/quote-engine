@@ -1,99 +1,125 @@
 import express from "express";
 import sharp from "sharp";
-import cors from "cors";
 import axios from "axios";
-import multer from "multer";
+import cors from "cors";
 
 const app = express();
 app.use(cors());
-
-// Keep multer for optional file upload compatibility
-const upload = multer({ storage: multer.memoryStorage() });
+app.use(express.json());
 
 async function downloadImage(url) {
   const response = await axios({
     method: "GET",
     url: url,
     responseType: "arraybuffer",
+    timeout: 10000,
   });
   return Buffer.from(response.data, "binary");
 }
 
-function calculateTextPosition(
-  imgWidth,
-  imgHeight,
-  textWidth,
-  textHeight,
-  position
-) {
-  const positions = {
-    "top-center": { x: (imgWidth - textWidth) / 2, y: textHeight * 0.1 },
-    center: { x: (imgWidth - textWidth) / 2, y: (imgHeight - textHeight) / 2 },
-    "bottom-center": {
-      x: (imgWidth - textWidth) / 2,
-      y: imgHeight - textHeight * 1.2,
-    },
-  };
-  return positions[position] || positions["center"];
+function wrapText(text, maxLineLength = 30) {
+  const words = text.split(" ");
+  const lines = [];
+  let currentLine = "";
+
+  words.forEach((word) => {
+    if ((currentLine + word).length <= maxLineLength) {
+      currentLine += (currentLine ? " " : "") + word;
+    } else {
+      if (currentLine) lines.push(currentLine);
+      currentLine = word;
+    }
+  });
+
+  if (currentLine) lines.push(currentLine);
+  return lines;
 }
 
 app.post("/api/add-quote", async (req, res) => {
   try {
     const {
-      imageUrl, // New parameter for image URL
+      imageUrl,
       quote = "Default quote",
       textColor = "#FFFFFF",
-      backgroundColor = "transparent",
-      fontSize = 72,
+      backgroundColor = "rgba(0, 0, 0, 0.7)",
+      fontSize = 48,
       position = "center",
-      maxWidth = 800,
+      maxWidthPercentage = 80, // Percentage of image width
+      cornerRadius = 15, // Rounded corners
+      padding = 30,
     } = req.body;
 
     if (!imageUrl) {
-      return res.status(400).json({ error: "No image URL provided" });
+      return res.status(400).json({ error: "imageUrl is required" });
     }
 
-    // Download the image
+    // Download image
     const imageBuffer = await downloadImage(imageUrl);
     const metadata = await sharp(imageBuffer).metadata();
 
-    // Create SVG text
+    // Calculate max width based on percentage of image width
+    const maxWidthPixels = Math.floor(
+      (metadata.width * maxWidthPercentage) / 100
+    );
+
+    // Wrap text to fit within the max width
+    const maxCharsPerLine = Math.floor(maxWidthPixels / (fontSize * 0.6)); // Approximate chars per line
+    const lines = wrapText(quote, maxCharsPerLine);
+
+    // Calculate dimensions
+    const lineHeight = fontSize * 1.4;
+    const textHeight = lines.length * lineHeight;
+    const svgWidth = maxWidthPixels - padding * 2;
+    const svgHeight = textHeight + padding * 2;
+
+    // Create SVG with proper text wrapping and rounded corners
     const svgText = `
-      <svg width="${metadata.width}" height="${metadata.height}">
-        <style>
-          .quote { 
-            font-family: Arial; 
-            font-size: ${fontSize}px; 
-            fill: ${textColor}; 
-            font-weight: bold;
-          }
-        </style>
-        <rect width="100%" height="100%" fill="${backgroundColor}" opacity="0.5" />
-        <foreignObject x="0" y="0" width="${maxWidth}" height="${
-      metadata.height
-    }">
-          <div xmlns="http://www.w3.org/1999/xhtml" class="quote">
-            ${quote.replace(/\n/g, "<br/>")}
-          </div>
-        </foreignObject>
+      <svg width="${svgWidth}" height="${svgHeight}" 
+           xmlns="http://www.w3.org/2000/svg">
+        <rect width="100%" height="100%" 
+              fill="${backgroundColor}" 
+              rx="${cornerRadius}" ry="${cornerRadius}"/>
+        <text x="50%" y="50%"
+              font-family="Arial, sans-serif"
+              font-size="${fontSize}"
+              fill="${textColor}"
+              font-weight="bold"
+              text-anchor="middle"
+              dominant-baseline="middle">
+          ${lines
+            .map(
+              (line, i) =>
+                `<tspan x="50%" dy="${
+                  i === 0 ? 0 : lineHeight
+                }">${line}</tspan>`
+            )
+            .join("")}
+        </text>
       </svg>
     `;
 
-    const svgBuffer = Buffer.from(svgText);
+    // Calculate position
+    let top;
+    switch (position) {
+      case "top":
+        top = padding;
+        break;
+      case "bottom":
+        top = metadata.height - svgHeight - padding;
+        break;
+      case "center":
+      default:
+        top = Math.floor((metadata.height - svgHeight) / 2);
+    }
 
-    // Process image
+    // Composite image
     const outputImage = await sharp(imageBuffer)
       .composite([
         {
-          input: svgBuffer,
-          gravity: position.includes("center") ? "center" : position,
-          ...calculateTextPosition(
-            metadata.width,
-            metadata.height,
-            maxWidth,
-            quote.split("\n").length * fontSize * 1.2,
-            position
-          ),
+          input: Buffer.from(svgText),
+          gravity: position,
+          top: top,
+          left: Math.floor((metadata.width - svgWidth) / 2),
         },
       ])
       .toBuffer();
@@ -105,10 +131,11 @@ app.post("/api/add-quote", async (req, res) => {
     res.status(500).json({
       error: "Image processing failed",
       details: error.message,
-      stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
     });
   }
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
+});

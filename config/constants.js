@@ -1,0 +1,11 @@
+export const DEFAULT_CONFIG = {
+  QUOTE: "Default quote",
+  TEXT_COLOR: "#FFFFFF",
+  BACKGROUND_COLOR: "rgba(0, 0, 0, 0.7)",
+  FONT_SIZE: 48,
+  POSITION: "center",
+  MAX_WIDTH_PERCENTAGE: 80,
+  CORNER_RADIUS: 15,
+  PADDING: 30,
+  TIMEOUT: 10000,
+};
