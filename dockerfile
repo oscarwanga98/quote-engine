@@ -20,7 +20,7 @@ COPY . .
 
 # Install OpenType.js fonts
 RUN mkdir -p node_modules/opentype.js/dist/fonts \
-    && wget https://fonts.cdnfonts.com/css/arial-2\
+    && wget https://fonts.cdnfonts.com/css/arial\
     -O node_modules/opentype.js/dist/fonts/Arial.ttf
 
 # Build the app (if needed)
