@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quote Image Overlay API Documentation</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        h1, h2, h3 {
+            color: #2c3e50;
+        }
+        h1 {
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            margin-top: 30px;
+            border-left: 4px solid #3498db;
+            padding-left: 10px;
+        }
+        code {
+            background-color: #f0f0f0;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        .endpoint {
+            background-color: #e8f4fc;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .example {
+            background-color: #e8f4fc;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .recommendation {
+            background-color: #fff3cd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        a {
+            color: #3498db;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h1>Quote Image Overlay API Documentation</h1>
+    
+    <section>
+        <h2>Overview</h2>
+        <p>This API allows users to overlay text quotes on images with customizable styling, positioning, and dimensions. It processes an image URL and generates a new image with the provided text overlaid in a styled container.</p>
+    </section>
+
+    <section class="endpoint">
+        <h2>API Endpoint</h2>
+        <h3>POST <code>/api/add-quote</code></h3>
+        <p>Overlays text on an image and returns the modified image.</p>
+        <p>Test link: <a href="https://quote-engine.onrender.com/api/add-quote" target="_blank">https://quote-engine.onrender.com/api/add-quote</a></p>
+
+        <h4>Request Body (JSON)</h4>
+        <table>
+            <tr>
+                <th>Parameter</th>
+                <th>Type</th>
+                <th>Default Value</th>
+                <th>Description</th>
+            </tr>
+            <tr>
+                <td><code>imageUrl</code></td>
+                <td>string</td>
+                <td><strong>Required</strong></td>
+                <td>URL of the source image</td>
+            </tr>
+            <tr>
+                <td><code>quote</code></td>
+                <td>string</td>
+                <td>"Default quote"</td>
+                <td>Text to overlay</td>
+            </tr>
+            <tr>
+                <td><code>textColor</code></td>
+                <td>string</td>
+                <td>"#FFFFFF" (white)</td>
+                <td>Text color (hex or rgba)</td>
+            </tr>
+            <tr>
+                <td><code>backgroundColor</code></td>
+                <td>string</td>
+                <td>"rgba(0, 0, 0, 0.7)"</td>
+                <td>Background color of the text box (hex or rgba)</td>
+            </tr>
+            <tr>
+                <td><code>fontSize</code></td>
+                <td>number</td>
+                <td>48</td>
+                <td>Font size in pixels</td>
+            </tr>
+            <tr>
+                <td><code>position</code></td>
+                <td>string</td>
+                <td>"center"</td>
+                <td>Text box position (top, bottom, center, top-left, bottom-right, etc.)</td>
+            </tr>
+            <tr>
+                <td><code>maxWidthPercentage</code></td>
+                <td>number</td>
+                <td>80</td>
+                <td>Max width of the text box (percentage of image width)</td>
+            </tr>
+            <tr>
+                <td><code>cornerRadius</code></td>
+                <td>number</td>
+                <td>15</td>
+                <td>Border radius of the text box</td>
+            </tr>
+            <tr>
+                <td><code>padding</code></td>
+                <td>number</td>
+                <td>30</td>
+                <td>Inner padding around the text</td>
+            </tr>
+        </table>
+
+        <h4>Example Request</h4>
+        <pre><code>{
+  "imageUrl": "https://example.com/image.jpg",
+  "quote": "Success is not final, failure is not fatal",
+  "textColor": "#FFFFFF",
+  "backgroundColor": "rgba(0, 0, 0, 0.7)",
+  "fontSize": 48,
+  "position": "bottom-right",
+  "maxWidthPercentage": 70,
+  "cornerRadius": 10,
+  "padding": 20
+}</code></pre>
+
+        <h4>Response</h4>
+        <ul>
+            <li><strong>Success:</strong> Returns the modified image as a JPEG binary.</li>
+            <li><strong>Error:</strong> Returns JSON with an error message.</li>
+        </ul>
+    </section>
+
+    <section>
+        <h2>Usage Examples</h2>
+
+        <div class="example">
+            <h3>1. Basic Usage (Default Styling)</h3>
+            <pre><code>curl -X POST http://localhost:3000/api/add-quote \\
+-H "Content-Type: application/json" \\
+-d '{
+  "imageUrl": "https://example.com/image.jpg",
+  "quote": "Stay hungry, stay foolish"
+}'</code></pre>
+        </div>
+
+        <div class="example">
+            <h3>2. Custom Styling & Positioning</h3>
+            <pre><code>curl -X POST http://localhost:3000/api/add-quote \\
+-H "Content-Type: application/json" \\
+-d '{
+  "imageUrl": "https://example.com/image.jpg",
+  "quote": "The only way to do great work is to love what you do",
+  "textColor": "#FF5733",
+  "backgroundColor": "rgba(255, 255, 255, 0.8)",
+  "fontSize": 42,
+  "position": "top-left",
+  "padding": 25
+}'</code></pre>
+        </div>
+
+        <div class="example">
+            <h3>3. Minimal Width & Rounded Corners</h3>
+            <pre><code>curl -X POST http://localhost:3000/api/add-quote \\
+-H "Content-Type: application/json" \\
+-d '{
+  "imageUrl": "https://example.com/image.jpg",
+  "quote": "Less is more",
+  "maxWidthPercentage": 60,
+  "cornerRadius": 20
+}'</code></pre>
+        </div>
+    </section>
+
+    <section>
+        <h2>Recommendations for Improvement</h2>
+
+        <div class="recommendation">
+            <h3>1. Better Text Wrapping & Overflow Handling</h3>
+            <p><strong>Current:</strong> Uses a simple character-based wrap.</p>
+            <p><strong>Improvement:</strong> Implement <strong>word-aware wrapping</strong> with hyphenation for long words.</p>
+            <pre><code>// Use a library like 'text-segmentation' for better wrapping
+import { segment } from 'text-segmentation';
+const lines = segment(quote, { maxLength: maxCharsPerLine });</code></pre>
+        </div>
+
+        <div class="recommendation">
+            <h3>2. Font Customization</h3>
+            <p><strong>Current:</strong> Only supports Arial (fallback to default metrics).</p>
+            <p><strong>Improvement:</strong> Allow <strong>custom font uploads</strong> or Google Fonts integration.</p>
+            <pre><code>// Allow font URL in request
+fontUrl: "https://fonts.googleapis.com/css2?family=Roboto"</code></pre>
+        </div>
+
+        <div class="recommendation">
+            <h3>3. Dynamic Background Sizing</h3>
+            <p><strong>Current:</strong> Fixed padding-based sizing.</p>
+            <p><strong>Improvement:</strong> Auto-adjust background box height based on <strong>actual text height</strong>.</p>
+            <pre><code>// Use canvas/text-measure to get exact text dimensions
+const textMetrics = measureText(quote, { fontSize, fontFamily });
+const svgHeight = textMetrics.height + (padding * 2);</code></pre>
+        </div>
+
+        <div class="recommendation">
+            <h3>4. Multi-Language Support</h3>
+            <p><strong>Current:</strong> Basic English text handling.</p>
+            <p><strong>Improvement:</strong> Add <strong>RTL (Right-to-Left) support</strong> for Arabic/Hebrew.</p>
+            <pre><code>// Detect language and adjust text direction
+if (isRTL(quote)) {
+  svgText += \` direction="rtl"\`;
+}</code></pre>
+        </div>
+
+        <div class="recommendation">
+            <h3>5. Caching & Performance Optimization</h3>
+            <p><strong>Current:</strong> Processes images on every request.</p>
+            <p><strong>Improvement:</strong> Cache processed images using <strong>Redis/CDN</strong>.</p>
+            <pre><code>// Cache key based on request params
+const cacheKey = \`\${imageUrl}-\${quote}-\${fontSize}-\${position}\`;
+if (cache.has(cacheKey)) return cache.get(cacheKey);</code></pre>
+        </div>
+
+        <div class="recommendation">
+            <h3>6. Error Handling for Image Fetching</h3>
+            <p><strong>Current:</strong> Basic timeout.</p>
+            <p><strong>Improvement:</strong> Add <strong>retry mechanism</strong> for failed downloads.</p>
+            <pre><code>const imageBuffer = await retry(() => downloadImage(url), { retries: 3 });</code></pre>
+        </div>
+    </section>
+
+    <section>
+        <h2>Conclusion</h2>
+        <p>This API provides a simple way to overlay text on images with customizable styling. Future improvements could include better text handling, font flexibility, and performance optimizations.</p>
+        <p>For contributions or issues, refer to the <a href="https://github.com/oscarwanga98/quote-engine.git" target="_blank">GitHub repository</a>. 🚀</p>
+    </section>
+</body>
+</html>
