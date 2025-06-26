@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  quote-api:
+    build: .
+    container_name: quote-image-api
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    volumes:
+      - ./fonts:/usr/src/app/node_modules/opentype.js/dist/fonts
+    restart: unless-stopped
