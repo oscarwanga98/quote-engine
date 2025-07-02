@@ -7,70 +7,75 @@ export const processImageWithQuote = async (options) => {
   const metadata = await sharp(imageBuffer).metadata();
   const overlay = await generateTextOverlay(options, metadata);
 
+  // Calculate positions without relying on gravity
+  const { top, left } = calculatePositions(
+    options.position || "center",
+    metadata.width,
+    metadata.height,
+    overlay.dimensions.width,
+    overlay.dimensions.height,
+    overlay.dimensions.padding
+  );
+
   return sharp(imageBuffer)
     .composite([
       {
         input: overlay.buffer,
-        gravity: options.position || "center",
-        top: calculateVerticalPosition(
-          options.position || "center",
-          metadata.height,
-          overlay.dimensions.height,
-          overlay.dimensions.padding
-        ),
-        left: calculateHorizontalPosition(
-          options.position || "center",
-          metadata.width,
-          overlay.dimensions.width,
-          overlay.dimensions.padding
-        ),
+        top: Math.round(top),
+        left: Math.round(left),
       },
     ])
     .toBuffer();
 };
 
-const calculateVerticalPosition = (
+const calculatePositions = (
   position,
+  imageWidth,
   imageHeight,
+  overlayWidth,
   overlayHeight,
   padding
 ) => {
-  // Handle combined positions like "bottom-left" or "top-right"
-  const verticalPosition = position.split("-")[0];
+  // Normalize position (handle cases like "bottom-left")
+  const [verticalPos, horizontalPos] = position.includes("-")
+    ? position.split("-")
+    : [position, position];
 
-  switch (verticalPosition) {
+  // Calculate vertical position
+  let top;
+  switch (verticalPos) {
     case "top":
-      return padding;
+      top = padding;
+      break;
     case "bottom":
-      // Ensure the overlay doesn't go below the image
-      return Math.max(
-        padding, // Minimum padding from bottom
-        imageHeight - overlayHeight - padding
-      );
+      top = imageHeight - overlayHeight - padding;
+      break;
     default: // center
-      return Math.floor((imageHeight - overlayHeight) / 2);
+      top = (imageHeight - overlayHeight) / 2;
   }
-};
 
-const calculateHorizontalPosition = (
-  position,
-  imageWidth,
-  overlayWidth,
-  padding
-) => {
-  // Handle combined positions like "bottom-left" or "top-right"
-  const horizontalPosition = position.split("-")[1] || position.split("-")[0];
-
-  switch (horizontalPosition) {
+  // Calculate horizontal position
+  let left;
+  switch (horizontalPos) {
     case "left":
-      return padding;
+      left = padding;
+      break;
     case "right":
-      // Ensure the overlay doesn't go beyond the image
-      return Math.max(
-        padding, // Minimum padding from right
-        imageWidth - overlayWidth - padding
-      );
+      left = imageWidth - overlayWidth - padding;
+      break;
     default: // center
-      return Math.floor((imageWidth - overlayWidth) / 2);
+      left = (imageWidth - overlayWidth) / 2;
   }
+
+  // Ensure positions stay within image bounds
+  return {
+    top: Math.max(
+      padding,
+      Math.min(top, imageHeight - overlayHeight - padding)
+    ),
+    left: Math.max(
+      padding,
+      Math.min(left, imageWidth - overlayWidth - padding)
+    ),
+  };
 };
